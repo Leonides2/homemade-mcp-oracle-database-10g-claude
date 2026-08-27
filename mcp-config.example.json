@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "oracle10g": {
+      "command": "C:\\Users\\jzuniga\\Documents\\Proyectos\\homemade-mcp-oracle-database-10g-claude\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "src.mcp_server"],
+      "cwd": "C:\\Users\\jzuniga\\Documents\\Proyectos\\homemade-mcp-oracle-database-10g-claude"
+    }
+  }
+}
