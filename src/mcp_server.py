@@ -10,15 +10,27 @@ usa el CLI en scripts/query.py, para no duplicar logica de conexion,
 limites ni auditoria.
 
 Uso (stdio, para registrar en un cliente MCP como Claude Desktop/Code):
-    python -m src.mcp_server
+    python ruta\completa\a\src\mcp_server.py
+
+Se ejecuta como script (no como "python -m src.mcp_server") a proposito:
+un cliente MCP lanza este proceso con un cwd arbitrario (no siempre la raiz
+del repo), y "-m src.mcp_server" solo resuelve el paquete "src" si ese cwd
+(o PYTHONPATH) lo contiene. Para no depender de eso, este archivo agrega la
+raiz del proyecto a sys.path usando su propia ubicacion (__file__, que es
+absoluta) antes de importar el resto del paquete, igual que scripts/*.py.
 """
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from mcp.server.mcpserver import MCPServer
 
-from .config import Settings, load_settings
-from .query_runner import QueryResult, run_query
-from .schema_inspector import describe_table as _describe_table
-from .schema_inspector import list_tables as _list_tables
+from src.config import Settings, load_settings
+from src.query_runner import QueryResult, run_query
+from src.schema_inspector import describe_table as _describe_table
+from src.schema_inspector import list_tables as _list_tables
 
 server = MCPServer(
     "oracle10g",

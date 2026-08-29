@@ -92,15 +92,31 @@ lectura, y la ruta de tu Oracle Instant Client
 
 ### 3. Servidor MCP
 
-Correrlo manualmente (stdio):
+Correrlo manualmente (stdio), invocando el archivo directamente (no con
+`-m`, ver nota abajo):
 
 ```
-.venv\Scripts\python -m src.mcp_server
+.venv\Scripts\python src\mcp_server.py
 ```
 
-Para registrarlo en un cliente MCP (Claude Desktop, Claude Code, etc.), ver
+Para registrarlo en Claude Code:
+
+```
+claude mcp add oracle10g -s user -- "<ruta>\.venv\Scripts\python.exe" "<ruta>\src\mcp_server.py"
+```
+
+o para otro cliente MCP (Claude Desktop, etc.), ver
 [`mcp-config.example.json`](mcp-config.example.json) — ajusta las rutas a tu
 maquina y agrega ese bloque a la config de `mcpServers` del cliente.
+
+**Nota:** el comando usa la ruta absoluta a `src\mcp_server.py` en vez de
+`python -m src.mcp_server`. Un cliente MCP lanza este proceso con un `cwd`
+que no controlas (y el formato estandar de `mcpServers` no soporta una
+clave `cwd`), asi que `-m src.mcp_server` puede fallar con
+`ModuleNotFoundError: No module named 'src'` si ese cwd no es la raiz del
+repo. `mcp_server.py` se agrega a si mismo al `sys.path` usando su propia
+ubicacion (`__file__`, siempre absoluta) antes de importar el resto del
+paquete, igual que hacen `scripts/*.py`, para no depender del cwd.
 
 Tools expuestos:
 - `run_query_tool(sql)` — ejecuta un SELECT (guard de solo-lectura aplica).
