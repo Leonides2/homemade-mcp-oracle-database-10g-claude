@@ -32,8 +32,11 @@ src/
   mcp_server.py        Servidor MCP (tools: run_query_tool, list_tables, describe_table)
 
 scripts/
+  install.py           Instalador automatico (venv, deps, .env, mcp-config.json, registro en Claude Code)
   test_connection.py   Prueba minima de conectividad (Fase 0)
   query.py             CLI de consultas (Fase 1) usado tambien por la skill
+
+install.sh / install.bat   Wrappers de un solo paso que llaman a scripts/install.py
 
 .claude/skills/oracle10g-query/SKILL.md   Skill de Claude Code (usa scripts/query.py)
 ```
@@ -64,16 +67,59 @@ seguridad y los limites se aplican una sola vez, en un solo lugar.
 
 ## Instalacion
 
+### Automatica (recomendado)
+
+Justo despues de clonar el repo, corre el instalador para tu sistema:
+
+```
+# Linux/macOS
+./install.sh
+
+# Windows
+install.bat
+```
+
+(equivalente en cualquier SO: `python scripts/install.py`)
+
+Esto hace todo el setup sin pasos manuales:
+
+1. Crea el entorno virtual en `.venv` (si no existe).
+2. Instala las dependencias de `requirements.txt` dentro de ese venv.
+3. Copia `.env.example` a `.env` si `.env` todavia no existe (las
+   credenciales reales las tenes que llenar vos a mano, eso nunca se
+   automatiza).
+4. Genera `mcp-config.json` (gitignored) con las rutas absolutas ya
+   resueltas **para esta maquina** — al python del venv y a
+   `src/mcp_server.py` — listo para pegar en la config de un cliente MCP
+   como Claude Desktop.
+5. Si el CLI `claude` esta instalado, registra el servidor MCP
+   automaticamente con `claude mcp add` (scope `user`), sin que tengas que
+   armar el comando a mano.
+
+Es seguro volver a correrlo: no pisa un `.env` existente ni duplica el
+registro en Claude Code, salvo que le pases `--force`. Usa `--no-register`
+si no queres tocar la config de Claude Code.
+
+Al final falta solo un paso manual, imposible de automatizar: editar `.env`
+con tus datos reales (ver comentarios en `.env.example`): host/puerto/
+service_name o SID, usuario y password del usuario de solo lectura, y la
+ruta de tu Oracle Instant Client (`ORACLE_INSTANT_CLIENT_DIR`). **Nunca
+subas `.env` a un repositorio.**
+
+### Manual
+
+Si preferis armar el entorno vos mismo en vez de usar el instalador:
+
 ```
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 copy .env.example .env
 ```
 
-Edita `.env` con tus datos reales (ver comentarios en `.env.example`):
-host/puerto/service_name o SID, usuario y password del usuario de solo
-lectura, y la ruta de tu Oracle Instant Client
-(`ORACLE_INSTANT_CLIENT_DIR`). **Nunca subas `.env` a un repositorio.**
+(en Linux/macOS: `.venv/bin/python -m pip install -r requirements.txt` y
+`cp .env.example .env`)
+
+Edita `.env` con tus datos reales igual que en la instalacion automatica.
 
 ## Uso
 
@@ -99,15 +145,21 @@ Correrlo manualmente (stdio), invocando el archivo directamente (no con
 .venv\Scripts\python src\mcp_server.py
 ```
 
-Para registrarlo en Claude Code:
+Si corriste el [instalador automatico](#automatica-recomendado), esto ya
+esta hecho: el registro en Claude Code se hizo solo, y el archivo
+`mcp-config.json` (gitignored) ya tiene las rutas de tu maquina resueltas
+para pegarlo en otro cliente MCP (Claude Desktop, etc.).
+
+Para registrarlo a mano en Claude Code:
 
 ```
 claude mcp add oracle10g -s user -- "<ruta>\.venv\Scripts\python.exe" "<ruta>\src\mcp_server.py"
 ```
 
-o para otro cliente MCP (Claude Desktop, etc.), ver
-[`mcp-config.example.json`](mcp-config.example.json) — ajusta las rutas a tu
-maquina y agrega ese bloque a la config de `mcpServers` del cliente.
+o para otro cliente MCP, ver [`mcp-config.example.json`](mcp-config.example.json)
+como plantilla — ajusta las rutas a tu maquina y agrega ese bloque a la
+config de `mcpServers` del cliente (o copia directo el `mcp-config.json` que
+genera el instalador).
 
 **Nota:** el comando usa la ruta absoluta a `src\mcp_server.py` en vez de
 `python -m src.mcp_server`. Un cliente MCP lanza este proceso con un `cwd`
